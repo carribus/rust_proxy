@@ -1,10 +1,13 @@
 mod config;
+mod server;
+mod http;
 
 use std::error::Error;
 use std::env;
 use colored::*;
 
 use crate::config::Config;
+use crate::server::Server;
 
 const CONFIG_FILENAME: &str = "config/config.json";
 
@@ -20,6 +23,9 @@ fn run_main() -> Result<(), Box<dyn Error>> {
 
     println!("config = {:#?}", config);
     println!("config.o.key = {:?}", config.value()["o"]["key"]);
+
+    let server = Server::new("127.0.0.1", 5050)?;
+    server.start()?;
 
     Ok(())
 }
