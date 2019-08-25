@@ -2,8 +2,36 @@ use std::collections::HashMap;
 use std::error::Error;
 
 #[derive(Debug)]
+pub enum RequestMethod {
+    CONNECT,
+    GET,
+    POST,
+    UPDATE,
+    DELETE,
+    PATCH,
+    HEAD,
+    OPTONS,
+}
+
+impl RequestMethod {
+    pub fn from_string(s: &str) -> Result<RequestMethod, String> {
+        match s {
+            "CONNECT" => Ok(RequestMethod::CONNECT),
+            "GET" => Ok(RequestMethod::GET),
+            "POST" => Ok(RequestMethod::POST),
+            "UPDATE" => Ok(RequestMethod::UPDATE),
+            "DELETE" => Ok(RequestMethod::DELETE),
+            "PATCH" => Ok(RequestMethod::PATCH),
+            "HEAD" => Ok(RequestMethod::HEAD),
+            "OPTIONS" => Ok(RequestMethod::OPTONS),
+            _ => Err(format!("Unknown HTTP method found: {}", s))
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Request {
-    method: String,
+    method: RequestMethod,
     uri: String,
     protocol: String,
     headers: HashMap<String, String>,
@@ -21,7 +49,7 @@ impl Request {
             let (method, uri, protocol) = Self::parse_req_method(&req_line);
 
             req = Request {
-                method: String::from(method),
+                method: RequestMethod::from_string(method)?,
                 uri: String::from(uri),
                 protocol: String::from(protocol),
                 headers: HashMap::new(),
@@ -44,11 +72,15 @@ impl Request {
         Ok(req)
     }
 
+    pub fn uri(&self) -> &String {
+        &self.uri
+    }
+
     pub fn set_body(&mut self, body: Option<String>) {
         self.body = body
     }
 
-    pub fn method(&self) -> &String {
+    pub fn method(&self) -> &RequestMethod {
         &self.method
     }
 

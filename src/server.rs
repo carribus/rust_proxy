@@ -1,9 +1,11 @@
 use std::error::Error;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 
-use crate::http::Request;
+use colored::*;
+
+use crate::http::{Request, RequestMethod};
 
 const READ_BUFFER_SIZE: usize = 8096;
 
@@ -69,8 +71,9 @@ impl Server {
                             }
                         }
 
-                        self.proxy_request(&req);
-
+                        if let Err(e) = self.proxy_request(&req) {
+                            println!("{} {}", "ERROR: ".bright_yellow(), e);
+                        }
                     }
                 }
                 Err(_e) => {
@@ -82,7 +85,24 @@ impl Server {
         Ok(())
     }
 
-    fn proxy_request(&self, req: &Request) -> () {
+    fn proxy_request(&self, req: &Request) -> Result<(), Box<dyn Error>> {
+        println!("Proxying request.. preparing connection");
+        let mut client = TcpStream::connect(req.uri())?;
 
+        println!("Selecting method...");
+        match &req.method() {
+            RequestMethod::CONNECT => {
+                println!("Sending CONNECT request");
+            },
+            RequestMethod::GET => {
+                println!("Sending GET request");
+            },
+            RequestMethod::POST => {
+                println!("Sending POST request");
+            },
+            _ => unimplemented!(),
+        }
+
+        Ok(())
     }
 }
