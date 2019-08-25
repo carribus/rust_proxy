@@ -43,7 +43,7 @@ impl Request {
         let mut lines = buffer.lines();
         let mut req;
 
-        println!("{}\n{}", "-".repeat(80), buffer);
+        // println!("{}\n{}", "-".repeat(80), buffer);
 
         if let Some(req_line) = lines.next() {
             let (method, uri, protocol) = Self::parse_req_method(&req_line);
