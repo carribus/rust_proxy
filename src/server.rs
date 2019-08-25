@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::io::prelude::*;
+use std::io::BufReader;
 use std::net::TcpListener;
 
 use crate::http::Request;
@@ -23,26 +24,65 @@ impl Server {
             let mut buffer = [0; READ_BUFFER_SIZE];
             match stream {
                 Ok(stream) => {
-                    println!("Incoming connection from {:?}", stream.peer_addr());
-                    let mut stream = stream;
+                    let peer_addr = stream.peer_addr();
+                    println!("Incoming connection from {:?}", peer_addr);
+
+                    let mut reader = BufReader::new(stream);
                     let mut buf_str = String::new();
+                    let mut terminate_count = 0;
 
-                    // TODO: Make this be able to read all sizes of requests without relying 
-                    //       on the buffer to read in one go
-                    stream.read(&mut buffer)?;
-                    buf_str.push_str(&String::from_utf8_lossy(&buffer[..]));
+                    // read the headers
+                    loop {
+                        let mut line = String::new();
+                        let bytes_read = reader.read_line(&mut line)?;
 
-                    println!("buf_str: {}", buf_str);
-                    if let Ok(req) = Request::from(&buf_str) {
-                        println!("{}\nRequest: {:?}", "-".repeat(50), req);
+                        if bytes_read == 0 || line == "\r\n" {
+                            break;
+                        }
+                        buf_str.push_str(&line);
                     }
-                },
-                Err(e) => {
+
+                    if let Ok(req) = Request::from(&buf_str) {
+                        let mut req = req;
+                        println!("{}\nRequest: {:?}", "-".repeat(50), req);
+                        
+                        // TODO: Refactor!
+                        // check if we need to read a body...
+                        if req.header_exists("Content-Length") {
+                            buf_str.clear();
+                            if let Some(content_length) = req.get_header("Content-Length") {
+                                let content_length = content_length.parse::<usize>()?;
+                                let mut content_counter = 0;
+
+                                println!("Reading {} bytes of content: ", content_length);
+
+                                loop {
+                                    content_counter += reader.read(&mut buffer)?;
+                                    buf_str.push_str(&String::from_utf8_lossy(&buffer[..]));
+                                    if content_counter >= content_length {
+                                        break;
+                                    }
+                                }
+
+                                println!("Done reading content: {}", buf_str);
+                                req.set_body(Some(buf_str));
+                            }
+                        }
+
+                        self.proxy_request(&req);
+
+                    }
+                }
+                Err(_e) => {
                     println!("Connection failed");
                 }
             }
         }
 
         Ok(())
+    }
+
+    fn proxy_request(&self, req: &Request) -> () {
+
     }
 }

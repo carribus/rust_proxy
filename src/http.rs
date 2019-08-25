@@ -6,7 +6,8 @@ pub struct Request {
     method: String,
     uri: String,
     protocol: String,
-    headers: HashMap<String, String>
+    headers: HashMap<String, String>,
+    body: Option<String>,
 }
 
 impl Request {
@@ -24,6 +25,7 @@ impl Request {
                 uri: String::from(uri),
                 protocol: String::from(protocol),
                 headers: HashMap::new(),
+                body: None,
             };
 
             while let Some(line) = lines.next() {
@@ -42,8 +44,20 @@ impl Request {
         Ok(req)
     }
 
-    pub fn method(&self) -> &str {
-        &self.method[..]
+    pub fn set_body(&mut self, body: Option<String>) {
+        self.body = body
+    }
+
+    pub fn method(&self) -> &String {
+        &self.method
+    }
+
+    pub fn get_header(&self, header: &str) -> Option<&String> {
+        self.headers.get(header)
+    }
+
+    pub fn header_exists(&self, header: &str) -> bool {
+        self.headers.contains_key(header)
     }
 
     fn parse_req_method(line: &str) -> (&str, &str, &str) {

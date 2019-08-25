@@ -7,7 +7,6 @@ use serde_json::{Value};
 pub struct Config(Value);
 
 impl Config {
-
     pub fn new(filename: &str) -> Result<Config, Box<dyn Error>> {
         let mut file = File::open(filename)?;
         let mut buffer = String::new();
